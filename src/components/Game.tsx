@@ -1,5 +1,3 @@
-// src/components/Game.tsx
-
 import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
@@ -17,13 +15,12 @@ interface GameProps {
   difficulty: Difficulty;
   grid: number[][];
   colorGrid: number[][];
-  moves: number;
   hintsUsed: number;
   errors: string[];
   isSolved: boolean;
   highlightedCells: [number, number][];
   hintMessage: string;
-  time: number; // The new prop for the timer
+  time: number;
   onCellTap: (row: number, col: number) => void;
   onCellDragOver: (row: number, col: number) => void;
   onNewGame: () => void;
@@ -35,7 +32,6 @@ const Game: React.FC<GameProps> = ({
   difficulty,
   grid,
   colorGrid,
-  moves,
   hintsUsed,
   errors,
   isSolved,
@@ -158,9 +154,11 @@ const Game: React.FC<GameProps> = ({
       </View>
 
       <View style={styles.statsContainer}>
-        <Text style={styles.movesText}>Moves: {moves}</Text>
+        <View style={styles.statsSideContainer} />
         <Text style={styles.timeText}>Time: {formatTime(time)}</Text>
-        <Text style={styles.hintsText}>Hints: {hintsUsed}</Text>
+        <View style={styles.statsSideContainer}>
+          <Text style={styles.hintsText}>Hints: {hintsUsed}</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -283,13 +281,25 @@ const styles = StyleSheet.create({
   resetButtonText: { color: 'white', fontWeight: '500' },
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 5,
+    paddingHorizontal: 10,
   },
-  movesText: { fontSize: 16, color: '#2c3e50' },
-  hintsText: { fontSize: 16, color: '#8e44ad' },
-  timeText: { fontSize: 16, color: '#2c3e50', fontWeight: 'bold' },
+  statsSideContainer: {
+    flex: 1,
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  hintsText: {
+    fontSize: 16,
+    color: '#8e44ad',
+    textAlign: 'right',
+  },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',

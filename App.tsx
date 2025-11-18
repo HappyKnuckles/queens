@@ -1,6 +1,4 @@
-// App.tsx
-
-import React, { useState, useRef, useEffect } from 'react'; // Import useRef and useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Alert,
@@ -23,7 +21,6 @@ const App = () => {
   const [grid, setGrid] = useState<number[][]>([]);
   const [colorGrid, setColorGrid] = useState<number[][]>([]);
   const [gameState, setGameState] = useState<GameState>('menu');
-  const [moves, setMoves] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSolved, setIsSolved] = useState(false);
   const [hintsUsed, setHintsUsed] = useState(0);
@@ -91,7 +88,6 @@ const App = () => {
       setColorGrid(newColorGrid);
       setSeed(gameSeed);
       setGameState('playing');
-      setMoves(0);
       setErrors([]);
       setIsSolved(false);
       setHintsUsed(0);
@@ -169,10 +165,10 @@ const App = () => {
 
       const message =
         hintsUsed > 0
-          ? `You won in ${moves} moves using ${hintsUsed} hint${
+          ? `You won using ${hintsUsed} hint${
               hintsUsed > 1 ? 's' : ''
             }, taking ${finalTime}!`
-          : `Perfect! You won in ${moves} moves without hints, taking ${finalTime}!`;
+          : `Perfect! You won without hints, taking ${finalTime}!`;
 
       Alert.alert('Congratulations!', message, [
         { text: 'Play Again', onPress: () => initializeGame(difficulty) },
@@ -201,7 +197,6 @@ const App = () => {
     const newGrid = grid.map(gridRow => [...gridRow]);
     newGrid[row][col] = (newGrid[row][col] + 1) % 3;
     setGrid(newGrid);
-    setMoves(moves + 1);
     setTimeout(() => {
       checkAndClearHighlights(newGrid);
       const isValid = validateGameState(newGrid);
@@ -357,7 +352,6 @@ const App = () => {
           difficulty={difficulty}
           grid={grid}
           colorGrid={colorGrid}
-          moves={moves}
           hintsUsed={hintsUsed}
           errors={errors}
           isSolved={isSolved}
