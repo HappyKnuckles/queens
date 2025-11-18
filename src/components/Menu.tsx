@@ -1,5 +1,3 @@
-// src/components/Menu.tsx
-
 import React from 'react';
 import {
   StyleSheet,
@@ -10,7 +8,6 @@ import {
 } from 'react-native';
 import { DIFFICULTIES, Difficulty } from '../constants/config';
 
-// Define the types for the props this component receives
 interface MenuProps {
   onSelectDifficulty: (diff: Difficulty) => void;
   selectedDifficulty: Difficulty;

@@ -1,6 +1,3 @@
-// src/game/generator.ts
-
-// Type definition for the data returned by the generator
 export interface PuzzleData {
   colorGrid: number[][];
   puzzleGrid: number[][];

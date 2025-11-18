@@ -1,6 +1,4 @@
-// src/components/Game.tsx
-
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,10 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  GestureResponderEvent,
+  Platform,
 } from 'react-native';
 import { COLORS, Difficulty } from '../constants/config';
 
-// Define the types for this component's props
 interface GameProps {
   difficulty: Difficulty;
   grid: number[][];
@@ -21,6 +20,7 @@ interface GameProps {
   errors: string[];
   isSolved: boolean;
   onCellTap: (row: number, col: number) => void;
+  onCellDragOver: (row: number, col: number) => void;
   onNewGame: () => void;
   onShowMenu: () => void;
   onGenerateHint: () => void;
@@ -35,16 +35,92 @@ const Game: React.FC<GameProps> = ({
   errors,
   isSolved,
   onCellTap,
+  onCellDragOver,
   onNewGame,
   onShowMenu,
   onGenerateHint,
 }) => {
+  const [lastDraggedCell, setLastDraggedCell] = useState<{
+    row: number;
+    col: number;
+  } | null>(null);
+
+  const hasDragged = useRef(false);
+  const gridContainerRef = useRef<View>(null);
+  const [gridOrigin, setGridOrigin] = useState({ x: 0, y: 0 }); 
+
   const { width, height } = Dimensions.get('window');
   const availableWidth = width - 24;
   const availableHeight = height - 150;
   const maxGridSize = Math.min(availableWidth, availableHeight);
   const cellSize = maxGridSize / difficulty.size;
   const fontSize = Math.max(8, cellSize * 0.55);
+
+  const onGridLayout = () => {
+    gridContainerRef.current?.measure((pageX, pageY) => {
+      setGridOrigin({ x: pageX, y: pageY });
+    });
+  };
+
+  const getCellFromCoordinates = (event: GestureResponderEvent) => {
+    const { pageX, pageY } = event.nativeEvent;
+
+    const locationX = pageX - gridOrigin.x;
+    const locationY = pageY - gridOrigin.y;
+
+    const col = Math.floor(locationX / cellSize);
+    const row = Math.floor(locationY / cellSize);
+
+    if (
+      row < 0 ||
+      row >= difficulty.size ||
+      col < 0 ||
+      col >= difficulty.size
+    ) {
+      return null;
+    }
+    return { row, col };
+  };
+
+  const handleTouchStart = () => {
+    hasDragged.current = false;
+  };
+
+  const handleTouchMove = (event: GestureResponderEvent) => {
+    hasDragged.current = true;
+    const cell = getCellFromCoordinates(event);
+    if (!cell) return;
+
+    if (
+      lastDraggedCell &&
+      lastDraggedCell.row === cell.row &&
+      lastDraggedCell.col === cell.col
+    ) {
+      return;
+    }
+
+    onCellDragOver(cell.row, cell.col);
+    setLastDraggedCell(cell);
+  };
+
+  const handleTouchEnd = (event: GestureResponderEvent) => {
+    if (!hasDragged.current) {
+      const cell = getCellFromCoordinates(event);
+      if (cell) {
+        onCellTap(cell.row, cell.col);
+      }
+    }
+    setLastDraggedCell(null);
+  };
+
+  const gridContainerProps = {
+    onStartShouldSetResponder: () => true,
+    onMoveShouldSetResponder: () => true,
+    onResponderGrant: handleTouchStart,
+    onResponderMove: handleTouchMove,
+    onResponderRelease: handleTouchEnd,
+    ...(Platform.OS === 'web' && { onMouseLeave: handleTouchEnd }),
+  };
 
   return (
     <View style={styles.gameContainer}>
@@ -62,14 +138,18 @@ const Game: React.FC<GameProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-
       <View style={styles.statsContainer}>
         <Text style={styles.movesText}>Moves: {moves}</Text>
         <Text style={styles.hintsText}>Hints: {hintsUsed}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={[styles.gridContainer, { maxWidth: maxGridSize }]}>
+        <View
+          ref={gridContainerRef}
+          onLayout={onGridLayout}
+          style={[styles.gridContainer, { maxWidth: maxGridSize }]}
+          {...gridContainerProps}
+        >
           {grid.map((row, i) => (
             <View key={i} style={styles.row}>
               {row.map((cell, j) => {
@@ -92,16 +172,11 @@ const Game: React.FC<GameProps> = ({
                   borderColor: '#000',
                 };
                 return (
-                  <TouchableOpacity
-                    key={`${i}-${j}`}
-                    style={[styles.cell, cellStyle]}
-                    onPress={() => onCellTap(i, j)}
-                    activeOpacity={0.7}
-                  >
+                  <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
                     <Text style={[styles.cellText, { fontSize }]}>
                       {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>

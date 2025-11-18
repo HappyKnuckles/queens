@@ -1,5 +1,3 @@
-// App.tsx
-
 import React, { useState } from 'react';
 import {
   StyleSheet,
@@ -30,7 +28,7 @@ const App = () => {
   const [lastPressTime, setLastPressTime] = useState(0);
   const [lastPressedDifficulty, setLastPressedDifficulty] =
     useState<Difficulty | null>(null);
-  const [seed, setSeed] = useState(0);
+  const [, setSeed] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const initializeGame = (diff: Difficulty, newSeed?: number) => {
@@ -152,6 +150,16 @@ const App = () => {
     }, 0);
   };
 
+  const handleCellDragOver = (row: number, col: number) => {
+    // Only mark empty cells as 'X'
+    if (grid[row][col] === 0) {
+      const newGrid = grid.map(gridRow => [...gridRow]);
+      newGrid[row][col] = 1; // Set to 'X'
+      setGrid(newGrid);
+      // We don't increment moves here to make dragging feel like a single action
+    }
+  };
+
   const generateHint = () => {
     if (gameState !== 'playing' || isSolved) return;
     const size = difficulty.size;
@@ -213,6 +221,7 @@ const App = () => {
           errors={errors}
           isSolved={isSolved}
           onCellTap={handleCellTap}
+          onCellDragOver={handleCellDragOver}
           onNewGame={() => initializeGame(difficulty)}
           onShowMenu={() => setGameState('menu')}
           onGenerateHint={generateHint}
@@ -222,7 +231,6 @@ const App = () => {
 
     return (
       <Menu
-        onStartGame={initializeGame}
         onSelectDifficulty={handleDifficultyPress}
         selectedDifficulty={difficulty}
       />
