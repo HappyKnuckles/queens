@@ -28,8 +28,11 @@ const App = () => {
   const [lastPressTime, setLastPressTime] = useState(0);
   const [lastPressedDifficulty, setLastPressedDifficulty] =
     useState<Difficulty | null>(null);
-  const [, setSeed] = useState(0);
+  const [seed, setSeed] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [highlightedCells, setHighlightedCells] = useState<[number, number][]>(
+    [],
+  );
 
   const initializeGame = (diff: Difficulty, newSeed?: number) => {
     setLoading(true);
@@ -64,6 +67,7 @@ const App = () => {
       setErrors([]);
       setIsSolved(false);
       setHintsUsed(0);
+      setHighlightedCells([]); // Clear highlights on new game
       setLoading(false);
     }, 50);
   };
@@ -138,6 +142,20 @@ const App = () => {
     }
   };
 
+  const checkAndClearHighlights = (currentGrid: number[][]) => {
+    if (highlightedCells.length === 0) {
+      return;
+    }
+
+    const allHighlightsFilled = highlightedCells.every(
+      ([r, c]) => currentGrid[r][c] !== 0,
+    );
+
+    if (allHighlightsFilled) {
+      setHighlightedCells([]);
+    }
+  };
+
   const handleCellTap = (row: number, col: number) => {
     if (gameState !== 'playing' || isSolved) return;
     const newGrid = grid.map(gridRow => [...gridRow]);
@@ -145,58 +163,135 @@ const App = () => {
     setGrid(newGrid);
     setMoves(moves + 1);
     setTimeout(() => {
+      checkAndClearHighlights(newGrid);
       const isValid = validateGameState(newGrid);
       if (isValid) checkWinCondition(newGrid);
     }, 0);
   };
 
   const handleCellDragOver = (row: number, col: number) => {
-    // Only mark empty cells as 'X'
     if (grid[row][col] === 0) {
       const newGrid = grid.map(gridRow => [...gridRow]);
-      newGrid[row][col] = 1; // Set to 'X'
+      newGrid[row][col] = 1;
       setGrid(newGrid);
-      // We don't increment moves here to make dragging feel like a single action
+      checkAndClearHighlights(newGrid);
     }
   };
 
   const generateHint = () => {
     if (gameState !== 'playing' || isSolved) return;
     const size = difficulty.size;
-    const newGrid = grid.map(row => [...row]);
+
+    setHighlightedCells([]);
+
+    const queens: [number, number][] = [];
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-        if (newGrid[r][c] === 0) {
-          let isInvalid = false;
-          for (let i = 0; i < size; i++) {
-            for (let j = 0; j < size; j++) {
-              if (grid[i][j] === 2) {
-                if (
-                  r === i ||
-                  c === j ||
-                  colorGrid[r][c] === colorGrid[i][j] ||
-                  (Math.abs(r - i) <= 1 && Math.abs(c - j) <= 1)
-                ) {
-                  isInvalid = true;
-                  break;
-                }
+        if (grid[r][c] === 2) queens.push([r, c]);
+      }
+    }
+
+    if (queens.length > 0) {
+      for (const [qr, qc] of queens) {
+        const attackedCellsToHighlight: [number, number][] = [];
+        const queenColor = colorGrid[qr][qc];
+
+        for (let r = 0; r < size; r++) {
+          for (let c = 0; c < size; c++) {
+            if (grid[r][c] === 0) {
+              const isInRow = r === qr;
+              const isInCol = c === qc;
+              const isAdjacent = Math.abs(r - qr) <= 1 && Math.abs(c - qc) <= 1;
+              const isInColor = colorGrid[r][c] === queenColor;
+
+              if (isInRow || isInCol || isAdjacent || isInColor) {
+                attackedCellsToHighlight.push([r, c]);
               }
             }
-            if (isInvalid) break;
           }
-          if (isInvalid) {
-            newGrid[r][c] = 1;
-            setGrid(newGrid);
-            setHintsUsed(hintsUsed + 1);
-            setMoves(moves + 1);
-            return;
-          }
+        }
+
+        if (attackedCellsToHighlight.length > 0) {
+          setHighlightedCells(attackedCellsToHighlight);
+          setHintsUsed(hintsUsed + 1);
+          Alert.alert(
+            'Hint: Attack Zone',
+            `A queen at (${qr + 1}, ${
+              qc + 1
+            }) attacks all cells in its row, column, region, and adjacent squares. The empty ones you missed are now highlighted.`,
+          );
+          return;
         }
       }
     }
+
+    const checkConstraintForSingle = (
+      cells: [number, number][],
+      constraintName: string,
+    ): boolean => {
+      if (cells.some(([r, c]) => grid[r][c] === 2)) return false;
+
+      const possibleSpots: [number, number][] = [];
+      for (const [r, c] of cells) {
+        if (grid[r][c] === 0) {
+          let isSafe = true;
+          for (const [qr, qc] of queens) {
+            if (
+              r === qr ||
+              c === qc ||
+              (Math.abs(r - qr) <= 1 && Math.abs(c - qc) <= 1) ||
+              colorGrid[r][c] === colorGrid[qr][qc]
+            ) {
+              isSafe = false;
+              break;
+            }
+          }
+          if (isSafe) {
+            possibleSpots.push([r, c]);
+          }
+        }
+      }
+
+      if (possibleSpots.length === 1) {
+        const [r, c] = possibleSpots[0];
+        setHighlightedCells([[r, c]]);
+        setHintsUsed(hintsUsed + 1);
+        Alert.alert(
+          'Hint: Only Spot Left!',
+          `In the ${constraintName}, there is only one valid place remaining for a queen. It has been highlighted.`,
+        );
+        return true;
+      }
+      return false;
+    };
+
+    for (let i = 0; i < size; i++) {
+      if (
+        checkConstraintForSingle(
+          Array.from({ length: size }, (_, c) => [i, c]),
+          `Row ${i + 1}`,
+        )
+      )
+        return;
+      if (
+        checkConstraintForSingle(
+          Array.from({ length: size }, (_, r) => [r, i]),
+          `Column ${i + 1}`,
+        )
+      )
+        return;
+      const colorCells: [number, number][] = [];
+      for (let r = 0; r < size; r++)
+        for (let c = 0; c < size; c++)
+          if (colorGrid[r][c] === i) colorCells.push([r, c]);
+      if (colorCells.length > 0) {
+        if (checkConstraintForSingle(colorCells, `Color Region`)) return;
+      }
+    }
+
     Alert.alert(
       'No Obvious Hints',
-      'No empty cells directly conflict with your current queens.',
+      'There are no simple moves based on your current board. You may need to use more advanced logic or re-evaluate your queen placements.',
     );
   };
 
@@ -220,6 +315,7 @@ const App = () => {
           hintsUsed={hintsUsed}
           errors={errors}
           isSolved={isSolved}
+          highlightedCells={highlightedCells}
           onCellTap={handleCellTap}
           onCellDragOver={handleCellDragOver}
           onNewGame={() => initializeGame(difficulty)}

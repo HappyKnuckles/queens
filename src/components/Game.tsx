@@ -1,5 +1,3 @@
-// src/components/Game.tsx
-
 import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
@@ -13,7 +11,6 @@ import {
 } from 'react-native';
 import { COLORS, Difficulty } from '../constants/config';
 
-// Interface remains the same
 interface GameProps {
   difficulty: Difficulty;
   grid: number[][];
@@ -22,6 +19,7 @@ interface GameProps {
   hintsUsed: number;
   errors: string[];
   isSolved: boolean;
+  highlightedCells: [number, number][];
   onCellTap: (row: number, col: number) => void;
   onCellDragOver: (row: number, col: number) => void;
   onNewGame: () => void;
@@ -37,6 +35,7 @@ const Game: React.FC<GameProps> = ({
   hintsUsed,
   errors,
   isSolved,
+  highlightedCells,
   onCellTap,
   onCellDragOver,
   onNewGame,
@@ -64,7 +63,7 @@ const Game: React.FC<GameProps> = ({
   const fontSize = Math.max(8, cellSize * 0.55);
 
   const onGridLayout = () => {
-    gridWrapperRef.current?.measure((pageX, pageY) => {
+    gridWrapperRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setGridOrigin({
         x: pageX + GRID_BORDER_WIDTH,
         y: pageY + GRID_BORDER_WIDTH,
@@ -92,6 +91,7 @@ const Game: React.FC<GameProps> = ({
   const handleTouchStart = () => {
     hasDragged.current = false;
   };
+
   const handleTouchMove = (event: GestureResponderEvent) => {
     hasDragged.current = true;
     const cell = getCellFromCoordinates(event);
@@ -106,6 +106,7 @@ const Game: React.FC<GameProps> = ({
     onCellDragOver(cell.row, cell.col);
     setLastDraggedCell(cell);
   };
+
   const handleTouchEnd = (event: GestureResponderEvent) => {
     if (!hasDragged.current) {
       const cell = getCellFromCoordinates(event);
@@ -157,40 +158,43 @@ const Game: React.FC<GameProps> = ({
               height: maxContentSize + GRID_BORDER_WIDTH * 2,
             },
           ]}
+          {...gridContainerProps}
         >
-          <View {...gridContainerProps}>
-            {grid.map((row, i) => (
-              <View key={i} style={styles.row}>
-                {row.map((cell, j) => {
-                  const BOLD_BORDER_WIDTH = 2;
-                  const cellStyle = {
-                    width: cellSize,
-                    height: cellSize,
-                    backgroundColor:
-                      colorGrid[i]?.[j] != null
-                        ? COLORS[colorGrid[i][j] % COLORS.length]
-                        : 'transparent',
-                    borderTopWidth:
-                      i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
-                        ? BOLD_BORDER_WIDTH
-                        : 0.5,
-                    borderLeftWidth:
-                      j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
-                        ? BOLD_BORDER_WIDTH
-                        : 0.5,
-                    borderColor: '#000',
-                  };
-                  return (
-                    <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
-                      <Text style={[styles.cellText, { fontSize }]}>
-                        {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
+          {grid.map((row, i) => (
+            <View key={i} style={styles.row}>
+              {row.map((cell, j) => {
+                const isHighlighted = highlightedCells.some(
+                  ([hr, hc]) => hr === i && hc === j,
+                );
+                const BOLD_BORDER_WIDTH = 2;
+                const cellStyle = {
+                  width: cellSize,
+                  height: cellSize,
+                  backgroundColor:
+                    colorGrid[i]?.[j] != null
+                      ? COLORS[colorGrid[i][j] % COLORS.length]
+                      : 'transparent',
+                  borderTopWidth:
+                    i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
+                      ? BOLD_BORDER_WIDTH
+                      : 0.5,
+                  borderLeftWidth:
+                    j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
+                      ? BOLD_BORDER_WIDTH
+                      : 0.5,
+                  borderColor: '#000',
+                };
+                return (
+                  <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
+                    {isHighlighted && <View style={styles.highlightOverlay} />}
+                    <Text style={[styles.cellText, { fontSize }]}>
+                      {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
         </View>
 
         <View style={styles.statusContainer}>
@@ -306,6 +310,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
     textAlign: 'center',
+  },
+  highlightOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
 });
 
