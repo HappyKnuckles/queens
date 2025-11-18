@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// App.tsx
+
+import React, { useState, useRef, useEffect } from 'react'; // Import useRef and useEffect
 import {
   StyleSheet,
   Alert,
@@ -35,6 +37,27 @@ const App = () => {
     [],
   );
 
+  const [time, setTime] = useState(0);
+  const timerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopTimer = () => {
+    if (timerInterval.current) {
+      clearInterval(timerInterval.current);
+      timerInterval.current = null;
+    }
+  };
+
+  const startTimer = () => {
+    stopTimer(); 
+    timerInterval.current = setInterval(() => {
+      setTime(prevTime => prevTime + 1);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => stopTimer();
+  }, []);
+
   const initializeGame = (diff: Difficulty, newSeed?: number) => {
     setLoading(true);
     setTimeout(() => {
@@ -58,6 +81,9 @@ const App = () => {
         puzzleGrid: newGrid,
         seed: gameSeed,
       } = puzzleData;
+
+      setTime(0);
+      startTimer();
 
       setHintMessage('');
       setDifficulty(diff);
@@ -129,17 +155,28 @@ const App = () => {
     const size = difficulty.size;
     const queenCount = currentGrid.flat().filter(cell => cell === 2).length;
     if (queenCount === size && validateGameState(currentGrid)) {
+      stopTimer();
+
       setIsSolved(true);
       setGameState('won');
+
+      const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}m ${secs}s`;
+      };
+      const finalTime = formatTime(time);
+
       const message =
         hintsUsed > 0
           ? `You won in ${moves} moves using ${hintsUsed} hint${
               hintsUsed > 1 ? 's' : ''
-            }!`
-          : `Perfect! You won in ${moves} moves without hints!`;
+            }, taking ${finalTime}!`
+          : `Perfect! You won in ${moves} moves without hints, taking ${finalTime}!`;
+
       Alert.alert('Congratulations!', message, [
         { text: 'Play Again', onPress: () => initializeGame(difficulty) },
-        { text: 'Main Menu', onPress: () => setGameState('menu') },
+        { text: 'Main Menu', onPress: () => handleShowMenu() },
       ]);
     }
   };
@@ -297,6 +334,13 @@ const App = () => {
     );
   };
 
+  const handleShowMenu = () => {
+    stopTimer();
+    setGameState('menu');
+    setTime(0);
+  };
+
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -319,10 +363,11 @@ const App = () => {
           isSolved={isSolved}
           highlightedCells={highlightedCells}
           hintMessage={hintMessage}
+          time={time}
           onCellTap={handleCellTap}
           onCellDragOver={handleCellDragOver}
           onNewGame={() => initializeGame(difficulty)}
-          onShowMenu={() => setGameState('menu')}
+          onShowMenu={handleShowMenu}
           onGenerateHint={generateHint}
         />
       );

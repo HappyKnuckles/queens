@@ -1,3 +1,5 @@
+// src/components/Game.tsx
+
 import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
@@ -21,6 +23,7 @@ interface GameProps {
   isSolved: boolean;
   highlightedCells: [number, number][];
   hintMessage: string;
+  time: number; // The new prop for the timer
   onCellTap: (row: number, col: number) => void;
   onCellDragOver: (row: number, col: number) => void;
   onNewGame: () => void;
@@ -38,6 +41,7 @@ const Game: React.FC<GameProps> = ({
   isSolved,
   highlightedCells,
   hintMessage,
+  time,
   onCellTap,
   onCellDragOver,
   onNewGame,
@@ -63,6 +67,14 @@ const Game: React.FC<GameProps> = ({
 
   const cellSize = maxContentSize / difficulty.size;
   const fontSize = Math.max(8, cellSize * 0.55);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
 
   const onGridLayout = () => {
     gridWrapperRef.current?.measure((x, y, width, height, pageX, pageY) => {
@@ -144,8 +156,10 @@ const Game: React.FC<GameProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.statsContainer}>
         <Text style={styles.movesText}>Moves: {moves}</Text>
+        <Text style={styles.timeText}>Time: {formatTime(time)}</Text>
         <Text style={styles.hintsText}>Hints: {hintsUsed}</Text>
       </View>
 
@@ -160,43 +174,48 @@ const Game: React.FC<GameProps> = ({
               height: maxContentSize + GRID_BORDER_WIDTH * 2,
             },
           ]}
-          {...gridContainerProps}
         >
-          {grid.map((row, i) => (
-            <View key={i} style={styles.row}>
-              {row.map((cell, j) => {
-                const isHighlighted = highlightedCells.some(
-                  ([hr, hc]) => hr === i && hc === j,
-                );
-                const BOLD_BORDER_WIDTH = 2;
-                const cellStyle = {
-                  width: cellSize,
-                  height: cellSize,
-                  backgroundColor:
-                    colorGrid[i]?.[j] != null
-                      ? COLORS[colorGrid[i][j] % COLORS.length]
-                      : 'transparent',
-                  borderTopWidth:
-                    i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
-                      ? BOLD_BORDER_WIDTH
-                      : 0.5,
-                  borderLeftWidth:
-                    j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
-                      ? BOLD_BORDER_WIDTH
-                      : 0.5,
-                  borderColor: '#000',
-                };
-                return (
-                  <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
-                    {isHighlighted && <View style={styles.highlightOverlay} />}
-                    <Text style={[styles.cellText, { fontSize }]}>
-                      {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
+          <View {...gridContainerProps}>
+            {grid.map((row, i) => (
+              <View key={i} style={styles.row}>
+                {row.map((cell, j) => {
+                  const isHighlighted = highlightedCells.some(
+                    ([hr, hc]) => hr === i && hc === j,
+                  );
+                  const BOLD_BORDER_WIDTH = 2;
+                  const cellStyle = {
+                    width: cellSize,
+                    height: cellSize,
+                    backgroundColor:
+                      colorGrid[i]?.[j] != null
+                        ? COLORS[colorGrid[i][j] % COLORS.length]
+                        : 'transparent',
+                    borderTopWidth:
+                      i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
+                        ? BOLD_BORDER_WIDTH
+                        : 0.5,
+                    borderLeftWidth:
+                      j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
+                        ? BOLD_BORDER_WIDTH
+                        : 0.5,
+                    borderColor: '#000',
+                  };
+                  return (
+                    <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
+                      <View style={styles.cellContentWrapper}>
+                        {isHighlighted && (
+                          <View style={styles.highlightOverlay} />
+                        )}
+                        <Text style={[styles.cellText, { fontSize }]}>
+                          {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
         </View>
 
         <View style={styles.statusContainer}>
@@ -206,8 +225,6 @@ const Game: React.FC<GameProps> = ({
               <Text style={styles.hintText}>{hintMessage}</Text>
             </View>
           ) : null}
-        </View>
-        <View style={styles.statusContainer}>
           {errors.length > 0 && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorTitle}>⚠️ Errors:</Text>
@@ -252,20 +269,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
   },
-  hintContainer: {
-    backgroundColor: '#fffbe6',
-    padding: 12,
-    borderRadius: 5,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ffe58f',
-  },
-  hintTitle: {
-    color: '#d46b08',
-    fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 5,
-  },
   hintText: {
     color: '#d46b08',
     fontSize: 13,
@@ -281,10 +284,12 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
     paddingVertical: 5,
   },
   movesText: { fontSize: 16, color: '#2c3e50' },
   hintsText: { fontSize: 16, color: '#8e44ad' },
+  timeText: { fontSize: 16, color: '#2c3e50', fontWeight: 'bold' },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -297,11 +302,14 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row' },
   cell: {
-    justifyContent: 'center',
-    alignItems: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,
     borderColor: '#333',
+  },
+  cellContentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cellText: {
     fontWeight: 'bold',
@@ -309,7 +317,25 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
+  highlightOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
   statusContainer: { width: '100%', marginTop: 20 },
+  hintContainer: {
+    backgroundColor: '#fffbe6',
+    padding: 12,
+    borderRadius: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ffe58f',
+  },
+  hintTitle: {
+    color: '#d46b08',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 5,
+  },
   errorContainer: {
     backgroundColor: '#fee',
     padding: 10,
@@ -338,10 +364,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
     textAlign: 'center',
-  },
-  highlightOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
 });
 
