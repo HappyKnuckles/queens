@@ -29,6 +29,7 @@ const App = () => {
   const [lastPressedDifficulty, setLastPressedDifficulty] =
     useState<Difficulty | null>(null);
   const [seed, setSeed] = useState(0);
+  const [hintMessage, setHintMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [highlightedCells, setHighlightedCells] = useState<[number, number][]>(
     [],
@@ -58,6 +59,7 @@ const App = () => {
         seed: gameSeed,
       } = puzzleData;
 
+      setHintMessage('');
       setDifficulty(diff);
       setGrid(newGrid);
       setColorGrid(newColorGrid);
@@ -67,7 +69,7 @@ const App = () => {
       setErrors([]);
       setIsSolved(false);
       setHintsUsed(0);
-      setHighlightedCells([]); // Clear highlights on new game
+      setHighlightedCells([]);
       setLoading(false);
     }, 50);
   };
@@ -153,6 +155,7 @@ const App = () => {
 
     if (allHighlightsFilled) {
       setHighlightedCells([]);
+      setHintMessage('');
     }
   };
 
@@ -183,6 +186,7 @@ const App = () => {
     const size = difficulty.size;
 
     setHighlightedCells([]);
+    setHintMessage('');
 
     const queens: [number, number][] = [];
     for (let r = 0; r < size; r++) {
@@ -214,11 +218,10 @@ const App = () => {
         if (attackedCellsToHighlight.length > 0) {
           setHighlightedCells(attackedCellsToHighlight);
           setHintsUsed(hintsUsed + 1);
-          Alert.alert(
-            'Hint: Attack Zone',
+          setHintMessage(
             `A queen at (${qr + 1}, ${
               qc + 1
-            }) attacks all cells in its row, column, region, and adjacent squares. The empty ones you missed are now highlighted.`,
+            }) attacks these empty squares.`,
           );
           return;
         }
@@ -256,9 +259,8 @@ const App = () => {
         const [r, c] = possibleSpots[0];
         setHighlightedCells([[r, c]]);
         setHintsUsed(hintsUsed + 1);
-        Alert.alert(
-          'Hint: Only Spot Left!',
-          `In the ${constraintName}, there is only one valid place remaining for a queen. It has been highlighted.`,
+        setHintMessage(
+          `In the ${constraintName}, there is only one valid place for a queen.`,
         );
         return true;
       }
@@ -316,6 +318,7 @@ const App = () => {
           errors={errors}
           isSolved={isSolved}
           highlightedCells={highlightedCells}
+          hintMessage={hintMessage}
           onCellTap={handleCellTap}
           onCellDragOver={handleCellDragOver}
           onNewGame={() => initializeGame(difficulty)}

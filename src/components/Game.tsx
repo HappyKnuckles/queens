@@ -20,6 +20,7 @@ interface GameProps {
   errors: string[];
   isSolved: boolean;
   highlightedCells: [number, number][];
+  hintMessage: string;
   onCellTap: (row: number, col: number) => void;
   onCellDragOver: (row: number, col: number) => void;
   onNewGame: () => void;
@@ -36,6 +37,7 @@ const Game: React.FC<GameProps> = ({
   errors,
   isSolved,
   highlightedCells,
+  hintMessage,
   onCellTap,
   onCellDragOver,
   onNewGame,
@@ -198,6 +200,14 @@ const Game: React.FC<GameProps> = ({
         </View>
 
         <View style={styles.statusContainer}>
+          {hintMessage ? (
+            <View style={styles.hintContainer}>
+              <Text style={styles.hintTitle}>💡 Hint:</Text>
+              <Text style={styles.hintText}>{hintMessage}</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.statusContainer}>
           {errors.length > 0 && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorTitle}>⚠️ Errors:</Text>
@@ -241,6 +251,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  hintContainer: {
+    backgroundColor: '#fffbe6',
+    padding: 12,
+    borderRadius: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ffe58f',
+  },
+  hintTitle: {
+    color: '#d46b08',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  hintText: {
+    color: '#d46b08',
+    fontSize: 13,
   },
   hintButtonText: { color: 'white', fontWeight: '500' },
   resetButton: {

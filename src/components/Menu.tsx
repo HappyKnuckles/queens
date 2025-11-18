@@ -95,15 +95,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedDifficultyText: { color: 'white', fontWeight: '600' },
-  startButton: {
-    backgroundColor: '#27ae60',
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 25,
-    marginBottom: 30,
-    elevation: 3,
-  },
-  startButtonText: { color: 'white', fontSize: 18, fontWeight: '600' },
   rulesContainer: {
     backgroundColor: 'white',
     padding: 20,
