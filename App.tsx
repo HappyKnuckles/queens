@@ -400,7 +400,7 @@ const App = () => {
             style={styles.backButton}
             onPress={() => setGameState('menu')}
           >
-            <Text style={styles.backButtonText}>← Menu</Text>
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.gameTitle}>{difficulty.name}</Text>
           <View style={styles.headerButtons}>
@@ -408,7 +408,7 @@ const App = () => {
               <Text style={styles.hintButtonText}>💡 Hint</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
-              <Text style={styles.resetButtonText}>Reset</Text>
+              <Text style={styles.resetButtonText}>New</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -611,13 +611,6 @@ const App = () => {
           </TouchableOpacity>
         ))}{' '}
       </View>{' '}
-      <TouchableOpacity
-        style={styles.startButton}
-        onPress={() => initializeGame(difficulty)}
-      >
-        {' '}
-        <Text style={styles.startButtonText}>Start Game</Text>{' '}
-      </TouchableOpacity>{' '}
       <View style={styles.rulesContainer}>
         {' '}
         <Text style={styles.rulesTitle}>How to Play:</Text>{' '}
