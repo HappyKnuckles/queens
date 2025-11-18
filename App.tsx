@@ -386,9 +386,11 @@ const App = () => {
 
   const renderGame = () => {
     // --- DYNAMIC SIZING LOGIC ---
-    const { width } = Dimensions.get('window');
+    const { width, height } = Dimensions.get('window');
     const availableWidth = width - 24; // 12px padding on each side
-    const cellSize = availableWidth / difficulty.size;
+    const availableHeight = height - 150;
+    const maxGridSize = Math.min(availableWidth, availableHeight);
+    const cellSize = maxGridSize / difficulty.size;
     const fontSize = Math.max(8, cellSize * 0.55); // Font size scales with cell size
 
     return (
