@@ -25,6 +25,23 @@ const solvePuzzleLogically = (
     return true;
   };
 
+  const findCombinations = <T>(array: T[], size: number): T[][] => {
+    const result: T[][] = [];
+    function combinationUtil(start: number, current: T[]) {
+      if (current.length === size) {
+        result.push([...current]);
+        return;
+      }
+      for (let i = start; i < array.length; i++) {
+        current.push(array[i]);
+        combinationUtil(i + 1, current);
+        current.pop();
+      }
+    }
+    combinationUtil(0, []);
+    return result;
+  };
+
   while (changed) {
     changed = false;
     if (queensPlaced === size) break;
@@ -134,6 +151,97 @@ const solvePuzzleLogically = (
         }
       }
     }
+    if (changed) continue;
+
+    for (let color = 0; color < size; color++) {
+      let hasQueenInColor = false;
+      const colorCells: [number, number][] = [];
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (colorGrid[r][c] === color) {
+            colorCells.push([r, c]);
+            if (grid[r][c] === 2) {
+              hasQueenInColor = true;
+            }
+          }
+        }
+      }
+      if (hasQueenInColor || colorCells.length === 0) {
+        continue;
+      }
+      const uniqueRows = new Set(colorCells.map(([r]) => r));
+      const uniqueCols = new Set(colorCells.map(([, c]) => c));
+      if (uniqueRows.size === 1) {
+        const row = uniqueRows.values().next().value;
+        for (let c = 0; c < size; c++) {
+          if (colorGrid[row!][c] !== color && grid[row!][c] === 0) {
+            grid[row!][c] = 1;
+            changed = true;
+          }
+        }
+      }
+      if (uniqueCols.size === 1) {
+        const col = uniqueCols.values().next().value;
+        for (let r = 0; r < size; r++) {
+          if (colorGrid[r][col!] !== color && grid[r][col!] === 0) {
+            grid[r][col!] = 1;
+            changed = true;
+          }
+        }
+      }
+    }
+    if (changed) continue;
+
+    const availableColors = Array.from({ length: size }, (_, i) => i).filter(
+      color => !queens.some(([qr, qc]) => colorGrid[qr][qc] === color)
+    );
+    for (let N = 2; N <= 4; N++) {
+      if (availableColors.length < N) break;
+      const columnIndices = Array.from({ length: size }, (_, i) => i);
+      const columnCombinations = findCombinations(columnIndices, N);
+      for (const columnCombo of columnCombinations) {
+        const confinedColors: number[] = [];
+        for (const color of availableColors) {
+          const candidates = colorCandidates[color];
+          if (candidates.length > 0 && candidates.every(([, c]) => columnCombo.includes(c))) {
+            confinedColors.push(color);
+          }
+        }
+        if (confinedColors.length === N) {
+          for (const col of columnCombo) {
+            for (let row = 0; row < size; row++) {
+              if (grid[row][col] === 0 && !confinedColors.includes(colorGrid[row][col])) {
+                grid[row][col] = 1;
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+      if (changed) break;
+      const rowIndices = Array.from({ length: size }, (_, i) => i);
+      const rowCombinations = findCombinations(rowIndices, N);
+      for (const rowCombo of rowCombinations) {
+        const confinedColors: number[] = [];
+        for (const color of availableColors) {
+          const candidates = colorCandidates[color];
+          if (candidates.length > 0 && candidates.every(([r]) => rowCombo.includes(r))) {
+            confinedColors.push(color);
+          }
+        }
+        if (confinedColors.length === N) {
+          for (const row of rowCombo) {
+            for (let col = 0; col < size; col++) {
+              if (grid[row][col] === 0 && !confinedColors.includes(colorGrid[row][col])) {
+                grid[row][col] = 1;
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+      if (changed) break;
+    }
   }
   return { grid, queens: queensPlaced, solvable: queensPlaced === size };
 };
@@ -145,7 +253,8 @@ export const generatePuzzle = (
 ): PuzzleData | null => {
   let solutionQueens: [number, number][] = [];
   let colorGrid: number[][] = [];
-  let currentSeed = initialSeed;
+  let currentSeed = initialSeed + Math.random() * 10000;
+
   const seededRandom = () => {
     const x = Math.sin(currentSeed++) * 10000;
     return x - Math.floor(x);
@@ -186,39 +295,49 @@ export const generatePuzzle = (
     const grid = Array(size)
       .fill(null)
       .map(() => Array(size).fill(-1));
-    const queues: [number, number][][] = Array.from({ length: size }, () => []);
+
+    const frontier: [number, number][] = [];
     solutionQueens.forEach(([r, c], color) => {
       grid[r][c] = color;
-      queues[color].push([r, c]);
+      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dr, dc] of directions) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size && grid[nr][nc] === -1) {
+          frontier.push([nr, nc]);
+        }
+      }
     });
-    let unassigned = size * size - size;
-    while (unassigned > 0) {
-      const colorOrder = Array.from({ length: size }, (_, i) => i).sort(
-        () => seededRandom() - 0.5,
-      );
-      for (const color of colorOrder) {
-        if (queues[color].length > 0) {
-          const [r, c] = queues[color].shift()!;
-          const directions = [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-          ];
-          directions.sort(() => seededRandom() - 0.5);
-          for (const [dr, dc] of directions) {
-            const nr = r + dr,
-              nc = c + dc;
-            if (
-              nr >= 0 &&
-              nr < size &&
-              nc >= 0 &&
-              nc < size &&
-              grid[nr][nc] === -1
-            ) {
-              grid[nr][nc] = color;
-              queues[color].push([nr, nc]);
-              unassigned--;
+
+    while (frontier.length > 0) {
+      frontier.sort(() => seededRandom() - 0.5);
+
+      const [r, c] = frontier.shift()!;
+
+      if (grid[r][c] !== -1) {
+        continue;
+      }
+
+      const neighborColors: number[] = [];
+      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dr, dc] of directions) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size && grid[nr][nc] !== -1) {
+          neighborColors.push(grid[nr][nc]);
+        }
+      }
+
+      if (neighborColors.length > 0) {
+        const chosenColor = neighborColors[Math.floor(seededRandom() * neighborColors.length)];
+        grid[r][c] = chosenColor;
+
+        for (const [dr, dc] of directions) {
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr >= 0 && nr < size && nc >= 0 && nc < size && grid[nr][nc] === -1) {
+            if (!frontier.some(([fr, fc]) => fr === nr && fc === nc)) {
+              frontier.push([nr, nc]);
             }
           }
         }

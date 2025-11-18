@@ -1,3 +1,5 @@
+// src/components/Game.tsx
+
 import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
@@ -11,6 +13,7 @@ import {
 } from 'react-native';
 import { COLORS, Difficulty } from '../constants/config';
 
+// Interface remains the same
 interface GameProps {
   difficulty: Difficulty;
   grid: number[][];
@@ -46,31 +49,35 @@ const Game: React.FC<GameProps> = ({
   } | null>(null);
 
   const hasDragged = useRef(false);
-  const gridContainerRef = useRef<View>(null);
-  const [gridOrigin, setGridOrigin] = useState({ x: 0, y: 0 }); 
+  const gridWrapperRef = useRef<View>(null);
+  const [gridOrigin, setGridOrigin] = useState({ x: 0, y: 0 });
 
   const { width, height } = Dimensions.get('window');
-  const availableWidth = width - 24;
-  const availableHeight = height - 150;
-  const maxGridSize = Math.min(availableWidth, availableHeight);
-  const cellSize = maxGridSize / difficulty.size;
+  const GRID_BORDER_WIDTH = 2;
+
+  const availableWidth = width - 24 - GRID_BORDER_WIDTH * 2;
+  const availableHeight = height - 150 - GRID_BORDER_WIDTH * 2;
+
+  const maxContentSize = Math.floor(Math.min(availableWidth, availableHeight));
+
+  const cellSize = maxContentSize / difficulty.size;
   const fontSize = Math.max(8, cellSize * 0.55);
 
   const onGridLayout = () => {
-    gridContainerRef.current?.measure((pageX, pageY) => {
-      setGridOrigin({ x: pageX, y: pageY });
+    gridWrapperRef.current?.measure((pageX, pageY) => {
+      setGridOrigin({
+        x: pageX + GRID_BORDER_WIDTH,
+        y: pageY + GRID_BORDER_WIDTH,
+      });
     });
   };
 
   const getCellFromCoordinates = (event: GestureResponderEvent) => {
     const { pageX, pageY } = event.nativeEvent;
-
     const locationX = pageX - gridOrigin.x;
     const locationY = pageY - gridOrigin.y;
-
     const col = Math.floor(locationX / cellSize);
     const row = Math.floor(locationY / cellSize);
-
     if (
       row < 0 ||
       row >= difficulty.size ||
@@ -85,12 +92,10 @@ const Game: React.FC<GameProps> = ({
   const handleTouchStart = () => {
     hasDragged.current = false;
   };
-
   const handleTouchMove = (event: GestureResponderEvent) => {
     hasDragged.current = true;
     const cell = getCellFromCoordinates(event);
     if (!cell) return;
-
     if (
       lastDraggedCell &&
       lastDraggedCell.row === cell.row &&
@@ -98,11 +103,9 @@ const Game: React.FC<GameProps> = ({
     ) {
       return;
     }
-
     onCellDragOver(cell.row, cell.col);
     setLastDraggedCell(cell);
   };
-
   const handleTouchEnd = (event: GestureResponderEvent) => {
     if (!hasDragged.current) {
       const cell = getCellFromCoordinates(event);
@@ -145,42 +148,49 @@ const Game: React.FC<GameProps> = ({
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View
-          ref={gridContainerRef}
+          ref={gridWrapperRef}
           onLayout={onGridLayout}
-          style={[styles.gridContainer, { maxWidth: maxGridSize }]}
-          {...gridContainerProps}
+          style={[
+            styles.gridBorderWrapper,
+            {
+              width: maxContentSize + GRID_BORDER_WIDTH * 2,
+              height: maxContentSize + GRID_BORDER_WIDTH * 2,
+            },
+          ]}
         >
-          {grid.map((row, i) => (
-            <View key={i} style={styles.row}>
-              {row.map((cell, j) => {
-                const BOLD_BORDER_WIDTH = 2;
-                const cellStyle = {
-                  width: cellSize,
-                  height: cellSize,
-                  backgroundColor:
-                    colorGrid[i]?.[j] != null
-                      ? COLORS[colorGrid[i][j] % COLORS.length]
-                      : 'transparent',
-                  borderTopWidth:
-                    i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
-                      ? BOLD_BORDER_WIDTH
-                      : 0.5,
-                  borderLeftWidth:
-                    j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
-                      ? BOLD_BORDER_WIDTH
-                      : 0.5,
-                  borderColor: '#000',
-                };
-                return (
-                  <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
-                    <Text style={[styles.cellText, { fontSize }]}>
-                      {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
+          <View {...gridContainerProps}>
+            {grid.map((row, i) => (
+              <View key={i} style={styles.row}>
+                {row.map((cell, j) => {
+                  const BOLD_BORDER_WIDTH = 2;
+                  const cellStyle = {
+                    width: cellSize,
+                    height: cellSize,
+                    backgroundColor:
+                      colorGrid[i]?.[j] != null
+                        ? COLORS[colorGrid[i][j] % COLORS.length]
+                        : 'transparent',
+                    borderTopWidth:
+                      i > 0 && colorGrid[i]?.[j] !== colorGrid[i - 1]?.[j]
+                        ? BOLD_BORDER_WIDTH
+                        : 0.5,
+                    borderLeftWidth:
+                      j > 0 && colorGrid[i]?.[j] !== colorGrid[i][j - 1]
+                        ? BOLD_BORDER_WIDTH
+                        : 0.5,
+                    borderColor: '#000',
+                  };
+                  return (
+                    <View key={`${i}-${j}`} style={[styles.cell, cellStyle]}>
+                      <Text style={[styles.cellText, { fontSize }]}>
+                        {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
         </View>
 
         <View style={styles.statusContainer}>
@@ -248,7 +258,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  gridContainer: { borderWidth: 2, borderColor: '#000' },
+  gridBorderWrapper: {
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#333',
+  },
   row: { flexDirection: 'row' },
   cell: {
     justifyContent: 'center',

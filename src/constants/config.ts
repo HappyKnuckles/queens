@@ -5,12 +5,12 @@ export interface Difficulty {
 }
 
 export const DIFFICULTIES: { [key: string]: Difficulty } = {
-  EASY: { size: 4, name: 'Easy (4x4)', removalRatio: 0.5 },
-  MEDIUM: { size: 6, name: 'Medium (6x6)', removalRatio: 0.6 },
-  HARD: { size: 8, name: 'Hard (8x8)', removalRatio: 0.75 },
-  EXPERT: { size: 10, name: 'Expert (10x10)', removalRatio: 0.85 },
+  EASY: { size: 4, name: 'Easy (4x4)', removalRatio: 0.7 },
+  MEDIUM: { size: 6, name: 'Medium (6x6)', removalRatio: 0.8 },
+  HARD: { size: 8, name: 'Hard (8x8)', removalRatio: 0.85 },
+  EXPERT: { size: 10, name: 'Expert (10x10)', removalRatio: 0.9 },
   MASTER: { size: 12, name: 'Master (12x12)', removalRatio: 0.95 },
-  HARDCORE: { size: 20, name: 'Hardcore (20x20)', removalRatio: 0.98 },
+  HARDCORE: { size: 20, name: 'Hardcore (20x20)', removalRatio: 0.96 },
 };
 
 export const COLORS = [
