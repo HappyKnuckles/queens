@@ -27,7 +27,6 @@ const App = () => {
   const [lastPressTime, setLastPressTime] = useState(0);
   const [lastPressedDifficulty, setLastPressedDifficulty] =
     useState<Difficulty | null>(null);
-  const [seed, setSeed] = useState(0);
   const [hintMessage, setHintMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [highlightedCells, setHighlightedCells] = useState<[number, number][]>(
@@ -76,7 +75,6 @@ const App = () => {
       const {
         colorGrid: newColorGrid,
         puzzleGrid: newGrid,
-        seed: gameSeed,
       } = puzzleData;
 
       setTime(0);
@@ -86,7 +84,6 @@ const App = () => {
       setDifficulty(diff);
       setGrid(newGrid);
       setColorGrid(newColorGrid);
-      setSeed(gameSeed);
       setGameState('playing');
       setErrors([]);
       setIsSolved(false);
