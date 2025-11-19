@@ -19,6 +19,7 @@ type GameState = 'menu' | 'playing' | 'won';
 const App = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>(DIFFICULTIES.EASY);
   const [grid, setGrid] = useState<number[][]>([]);
+  const [initialGrid, setInitialGrid] = useState<number[][]>([]);
   const [colorGrid, setColorGrid] = useState<number[][]>([]);
   const [gameState, setGameState] = useState<GameState>('menu');
   const [errors, setErrors] = useState<string[]>([]);
@@ -44,7 +45,7 @@ const App = () => {
   };
 
   const startTimer = () => {
-    stopTimer(); 
+    stopTimer();
     timerInterval.current = setInterval(() => {
       setTime(prevTime => prevTime + 1);
     }, 1000);
@@ -72,10 +73,7 @@ const App = () => {
         return;
       }
 
-      const {
-        colorGrid: newColorGrid,
-        puzzleGrid: newGrid,
-      } = puzzleData;
+      const { colorGrid: newColorGrid, puzzleGrid: newGrid } = puzzleData;
 
       setTime(0);
       startTimer();
@@ -83,6 +81,7 @@ const App = () => {
       setHintMessage('');
       setDifficulty(diff);
       setGrid(newGrid);
+      setInitialGrid(newGrid); // Store the original grid state
       setColorGrid(newColorGrid);
       setGameState('playing');
       setErrors([]);
@@ -248,9 +247,7 @@ const App = () => {
           setHighlightedCells(attackedCellsToHighlight);
           setHintsUsed(hintsUsed + 1);
           setHintMessage(
-            `A queen at (${qr + 1}, ${
-              qc + 1
-            }) attacks these empty squares.`,
+            `A queen at (${qr + 1}, ${qc + 1}) attacks these empty squares.`,
           );
           return;
         }
@@ -332,6 +329,15 @@ const App = () => {
     setTime(0);
   };
 
+  const handleReset = () => {
+    if (!initialGrid.length) return;
+
+    setGrid(initialGrid);
+    setErrors([]);
+    setIsSolved(false);
+    setHighlightedCells([]);
+    setHintMessage('');
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -360,6 +366,7 @@ const App = () => {
           onNewGame={() => initializeGame(difficulty)}
           onShowMenu={handleShowMenu}
           onGenerateHint={generateHint}
+          onReset={handleReset}
         />
       );
     }

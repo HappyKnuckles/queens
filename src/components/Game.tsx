@@ -26,6 +26,7 @@ interface GameProps {
   onNewGame: () => void;
   onShowMenu: () => void;
   onGenerateHint: () => void;
+  onReset: () => void;
 }
 
 const Game: React.FC<GameProps> = ({
@@ -43,6 +44,7 @@ const Game: React.FC<GameProps> = ({
   onNewGame,
   onShowMenu,
   onGenerateHint,
+  onReset,
 }) => {
   const [lastDraggedCell, setLastDraggedCell] = useState<{
     row: number;
@@ -147,8 +149,11 @@ const Game: React.FC<GameProps> = ({
           <TouchableOpacity style={styles.hintButton} onPress={onGenerateHint}>
             <Text style={styles.hintButtonText}>💡 Hint</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.resetButton} onPress={onNewGame}>
-            <Text style={styles.resetButtonText}>New</Text>
+          <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.newGameButton} onPress={onNewGame}>
+            <Text style={styles.newGameButtonText}>New</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -273,12 +278,19 @@ const styles = StyleSheet.create({
   },
   hintButtonText: { color: 'white', fontWeight: '500' },
   resetButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#3498db',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
   },
   resetButtonText: { color: 'white', fontWeight: '500' },
+  newGameButton: {
+    backgroundColor: '#e74c3c',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  newGameButtonText: { color: 'white', fontWeight: '500' },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
