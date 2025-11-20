@@ -21,9 +21,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: [
-              '@react-native/babel-preset'
-            ],
+            presets: ['@react-native/babel-preset'],
           },
         },
       },
@@ -40,9 +38,10 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(appDirectory, 'public/index.html'),
+      favicon: path.resolve(appDirectory, 'assets/favicon.png'),
     }),
   ],
-  
+
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist'),
