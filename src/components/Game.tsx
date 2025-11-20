@@ -210,7 +210,11 @@ const Game: React.FC<GameProps> = ({
                           <View style={styles.highlightOverlay} />
                         )}
                         <Text style={[styles.cellText, { fontSize }]}>
-                          {cell === 1 ? '❌' : cell === 2 ? '👑' : ''}
+                          {cell === 1
+                            ? '❌\uFE0E'
+                            : cell === 2
+                            ? '👑'
+                            : ''}
                         </Text>
                       </View>
                     </View>

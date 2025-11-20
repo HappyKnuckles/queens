@@ -50,7 +50,7 @@ const Menu: React.FC<MenuProps> = ({
         <Text style={styles.rulesText}>
           • Tap to cycle: empty → ❌ → 👑{'\n'}• One 👑 per row.{'\n'}• One 👑
           per column.{'\n'}• One 👑 per colored region.{'\n'}• Queens cannot be
-          adjacent (not even diagonally).
+          adjacent.
         </Text>
       </View>
     </ScrollView>

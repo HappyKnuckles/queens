@@ -13,6 +13,7 @@ import { DIFFICULTIES, Difficulty } from './src/constants/config';
 import { generatePuzzle, PuzzleData } from './src/game/generator';
 import Menu from './src/components/Menu';
 import Game from './src/components/Game';
+import { Dimensions } from 'react-native';
 
 type GameState = 'menu' | 'playing' | 'won';
 
@@ -388,7 +389,7 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: '#f8f9fa', minHeight: Dimensions.get('window').height },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 10, fontSize: 16, color: '#2c3e50' },
 });
